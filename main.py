@@ -72,10 +72,25 @@ def getCount(word1, word2 = None):
 
 def getHighestProbWordFromPrevWord(prevWord):
 	wordlist = probs[prevWord][1]
-	return max(wordlist, key=wordlist.get)
+	word = max(wordlist, key=wordlist.get)
+	return word 
 
 def printPossibleWordsFromPrevWord(prevWord):
 	print(probs[prevWord][1])
 
-printPossibleWordsFromPrevWord("Alex")
-print(getHighestProbWordFromPrevWord("Alex"))
+def getHighestProbUnigram():
+	return max(probs, key=lambda x: probs[x][0])
+
+#printPossibleWordsFromPrevWord("Alex")
+#print(getHighestProbWordFromPrevWord("Alex"))
+
+startWord = "test"
+
+if(counts[startWord] != None):
+	print(startWord)
+	for x in range(10):
+		next = getHighestProbWordFromPrevWord(startWord)
+		print(next)
+		startWord = next
+else:
+	print("Start word not in corpus")

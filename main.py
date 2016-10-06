@@ -4,6 +4,10 @@ import os
 import random
 import sys
 from collections import Counter
+import matplotlib.pyplot as plt
+import heapq
+
+plt.style.use('ggplot')
 
 
 #get command line arguments
@@ -13,6 +17,9 @@ parser.add_argument('-g', help='Option to generate sentences', action='store_tru
 parser.add_argument('-a', help='Option to use add one smoothing', action='store_true', required=False, default=False)
 parser.add_argument('-d', help='For debugging', action='store_true', required=False, default=False)
 parser.add_argument('-i', help='Option to use custom start word', required=False, default=None)
+parser.add_argument('-p', help='Show Graph Plot of Probs', action='store_true', required=False, default=False)
+
+
 
 args = parser.parse_args()
 
@@ -21,6 +28,7 @@ generateSentence = args.g
 addOneSmoothing = args.a
 debugging = args.d
 customStartWord = args.i
+graph = args.p
 
 corpuses = []
 
@@ -71,7 +79,6 @@ if(customStartWord != None and customStartWord not in allWords):
 #close files
 for corpus in corpuses:
 	corpus.close()
-
 
 #set probabilities
 probs = {}
@@ -158,6 +165,26 @@ if(generateSentence):
 		else:
 			break
 	print()
+
+if(graph):
+	#for unigrams
+	keys = probs.keys()
+	values = [probs[x][0] for x in keys]
+	#print(values)
+	u10 = dict(zip(keys, values))
+	#print(u10)
+	words = heapq.nlargest(20, u10, key=u10.get)
+	values = []
+	for word in words:
+		values.append(math.exp(probs[word][0]) * 100)
+	print(values[0])
+
+	plt.title("Unigrams Probability")
+	plt.xlabel('Word')
+	plt.ylabel('Prob %')
+	plt.bar(range(len(values)), values)
+	plt.xticks(range(len(words)), words)
+	plt.show()
 
 if(debugging and customStartWord):
 	print(probs[customStartWord])

@@ -3,6 +3,7 @@ import math
 import os
 import random
 import sys
+from collections import Counter
 
 
 #get command line arguments
@@ -13,62 +14,59 @@ parser.add_argument('-a', help='Option to use add one smoothing', action='store_
 parser.add_argument('-d', help='For debugging', action='store_true', required=False, default=False)
 parser.add_argument('-i', help='Option to use custom start word', required=False, default=None)
 
-
-
 args = parser.parse_args()
 
 corpusFolders = args.c
 generateSentence = args.g
 addOneSmoothing = args.a
 debugging = args.d
-startWord = args.i
+customStartWord = args.i
 
 corpuses = []
 
 for folder in corpusFolders:
 	for dirpath, dirnames, filenames in os.walk(folder):
 		for filename in [f for f in filenames if f.endswith(".txt")]:
-			corpus = open(os.path.join(dirpath, filename), "r")
+			corpus = open(os.path.join(dirpath, filename), "r", encoding='utf-8', errors='ignore')
 			corpuses.append(corpus)
 
-N = 0
-
-counts = {}
 allWordsList = []
 
 print("reading corpus...")
 for corpus in corpuses: # for reach corpus
 	for line in corpus: # for each line
 		words = line.strip().split() #all words on line
+		allWordsList.extend(words)
 
-		#for unigram counts
-		for word in words:
-			N = N + 1 #increases total number of words
-			allWordsList.append(word)
-			if(counts.get(word) == None):
-				counts[word] = [0 , {}]
-			counts[word][0] += 1
+#unigram
+counts = Counter(allWordsList)
+N = sum(counts.values()) #total num of words
 
-		#for bigram counts
-		for word1, word2 in zip(words, words[1:]): #go through pairs
-			
-			if(counts[word1][1].get(word2) == None):
-				counts[word1][1][word2] = 0
-			counts[word1][1][word2] += 1
+#makes room for bigram
+for key in counts:
+	value = counts[key]
+	counts[key] = [value, {}]
+
+#for bigram counts
+for word1, word2 in zip(allWordsList, allWordsList[1:]): #go through pairs
+	
+	if(counts[word1][1].get(word2) == None):
+		counts[word1][1][word2] = 0
+	counts[word1][1][word2] += 1
 
 allWords = set(allWordsList)
 
-if(startWord != None and startWord not in allWords):
-	print("Start word '" + startWord + "' not in corpus. Choose a word in the corpus for your start word.")
+if(customStartWord != None and customStartWord not in allWords):
+	print("Start word '" + customStartWord + "' not in corpus. Choose a word in the corpus for your start word.")
 	print("Exiting...")
 	sys.exit()
 
-#add 0 probs for all words where needed. NEED TO FIX
-print("Adding default probs for all words not in bigrams.. (This may take a while)")
-for key in counts:
-	for word in allWords:
-		if(counts[key][1].get(word) == None):
-			counts[key][1][word] = 0
+# #add 0 probs for all words where needed. NEED TO FIX
+# print("Adding default probs for all words not in bigrams.. (This may take a while)")
+# for key in counts:
+# 	for word in allWords:
+# 		if(counts[key][1].get(word) == None):
+# 			counts[key][1][word] = 0
 
 #close files
 for corpus in corpuses:
@@ -77,7 +75,7 @@ for corpus in corpuses:
 
 #set probabilities
 probs = {}
-V = len(set(allWords))
+V = len(allWords)
 
 print("Calculating Probabilities...")
 if(addOneSmoothing):
@@ -107,23 +105,13 @@ for word in counts:
 			else:
 				probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
 
-
-#helping functions for testing
-# def getProb(word1, word2 = None):
-# 	if(word2 == None):
-# 		return probs[word1][0]
-# 	else:
-# 		return probs[word1][1][word2]
-
-# def getCount(word1, word2 = None):
-# 	if(word2 == None):
-# 		return counts[word1][0]
-# 	else:
-# 		return counts[word1][1][word2]
-
 #really inefficient algorithim to find highest prob
 def getHighestProbWordFromPrevWord(prevWord):
 	wordlist = probs[prevWord][1]
+
+	if(len(wordlist) == 0):
+		return None
+
 	maxList = []
 	max = -9999
 	for word in wordlist:
@@ -134,12 +122,8 @@ def getHighestProbWordFromPrevWord(prevWord):
 	for word in wordlist:
 		if(wordlist[word] == max):
 			maxList.append(word)
-
 	#return random one
 	return random.choice(maxList)
-
-# def printPossibleWordsFromPrevWord(prevWord):
-# 	print(probs[prevWord][1])
 
 #really inefficient to find highest prob
 def getHighestProbUnigram():
@@ -160,18 +144,20 @@ def getHighestProbUnigram():
 if(generateSentence):
 
 	print("Generating sentence using corpus folder(s) of " + str(corpusFolders))
-	if(startWord == None):
+	if(customStartWord == None):
 		startWord = getHighestProbUnigram()
+	else:
+		startWord = customStartWord
 	
 	print(startWord, end=" ")
 	for x in range(100):
 		next = getHighestProbWordFromPrevWord(startWord)
-		if(next):
+		if(next != None):
 			print(next,end=" ")
 			startWord = next
 		else:
 			break
 	print()
 
-if(debugging):
-	print(probs)
+if(debugging and customStartWord):
+	print(probs[customStartWord])

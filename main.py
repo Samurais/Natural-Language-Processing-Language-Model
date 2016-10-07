@@ -37,6 +37,12 @@ for folder in corpusFolders:
 			corpus = open(os.path.join(dirpath, filename), "r", encoding='utf-8', errors='ignore')
 			corpuses.append(corpus)
 
+if(len(corpuses) == 0):
+	print("Folder does not exist or contains no text files...")	
+	print("Exiting...")
+	sys.exit()
+
+
 allWordsList = []
 
 print("reading corpus...")
@@ -67,13 +73,6 @@ if(customStartWord != None and customStartWord not in allWords):
 	print("Start word '" + customStartWord + "' not in corpus. Choose a word in the corpus for your start word.")
 	print("Exiting...")
 	sys.exit()
-
-# #add 0 probs for all words where needed. NEED TO FIX
-# print("Adding default probs for all words not in bigrams.. (This may take a while)")
-# for key in counts:
-# 	for word in allWords:
-# 		if(counts[key][1].get(word) == None):
-# 			counts[key][1][word] = 0
 
 #close files
 for corpus in corpuses:
@@ -111,41 +110,64 @@ for word in counts:
 			else:
 				probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
 
-#really inefficient algorithim to find highest prob
-def getHighestProbWordFromPrevWord(prevWord):
-	wordlist = probs[prevWord][1]
+# #really inefficient algorithim to find highest prob given previous word
+# def getHighestProbWordFromPrevWord(prevWord):
+# 	wordlist = probs[prevWord][1]
 
-	if(len(wordlist) == 0):
-		return None
+# 	if(len(wordlist) == 0):
+# 		return None
 
-	maxList = []
-	max = -9999
-	for word in wordlist:
-		if(wordlist[word] > max):
-			max = wordlist[word]
+# 	maxList = []
+# 	max = -9999
+# 	for word in wordlist:
+# 		if(wordlist[word] > max):
+# 			max = wordlist[word]
 
-	#gets the ties for max and adds them to list
-	for word in wordlist:
-		if(wordlist[word] == max):
-			maxList.append(word)
-	#return random one
-	return random.choice(maxList)
+# 	#gets the ties for max and adds them to list
+# 	for word in wordlist:
+# 		if(wordlist[word] == max):
+# 			maxList.append(word)
+# 	#return random one
+# 	return random.choice(maxList)
 
-#really inefficient to find highest prob
-def getHighestProbUnigram():
-	#returns the unigram with the highest probability
-	maxList = []
-	max = -9999
-	for word in probs:
-		if(probs[word][0] > max):
-			max = probs[word][0]
+def weightedPick(d):
+	values = [x * -1 for x in d.values()]
+	r = random.uniform(0, sum(values))
+	s = 0.0
+	for key, weight, in d.items():
+		weight = weight * -1
+		s = s + weight 
+		#if r >= s: print(key + " " + str(weight))
+		if r > s: return key
+	return key
 
-	for word in probs:
-		if(probs[word][0] == max):
-			maxList.append(word)
+def getWeightedUnigram():
+	d = {}
+	for key in probs:
+		d[key] = probs[key][0]
+	return weightedPick(d)
 
-	return random.choice(maxList)
+def getWeightedBigram(prevWord):
+	d = {}
+	for key in probs[prevWord][1]:
+		d[key] = probs[prevWord][1].get(key)
+	if(len(d) == 0): return None
+	return weightedPick(d)
 
+# #really inefficient to find highest prob
+# def getHighestProbUnigram():
+# 	#returns the unigram with the highest probability
+# 	maxList = []
+# 	max = -9999
+# 	for word in probs:
+# 		if(probs[word][0] > max):
+# 			max = probs[word][0]
+
+# 	for word in probs:
+# 		if(probs[word][0] == max):
+# 			maxList.append(word)
+
+# 	return random.choice(maxList)
 
 def getProbOfWord(word1, word2=None):
 	if(word2 == None):
@@ -155,21 +177,30 @@ def getProbOfWord(word1, word2=None):
 
 if(generateSentence):
 
+	output = []
 	print("Generating sentence using corpus folder(s) of " + str(corpusFolders))
 	if(customStartWord == None):
-		startWord = getHighestProbUnigram()
+		startWord = getWeightedUnigram()
 	else:
 		startWord = customStartWord
 	
 	print(startWord, end=" ")
+
+	count = []
 	for x in range(100):
-		next = getHighestProbWordFromPrevWord(startWord)
+		next = getWeightedBigram(startWord)
 		if(next != None):
 			print(next,end=" ")
+			#print(next)
+			count.append(next)
 			startWord = next
 		else:
-			break
+			startWord = getWeightedUnigram()
+			count.append(startWord)
+			print(startWord,end=" ")
+
 	print()
+	print(count.count("a")/100)
 
 if(graph):
 	print("Generating graphs using corpus folder(s) of " + str(corpusFolders))
@@ -177,23 +208,23 @@ if(graph):
 	unigramKeys = probs.keys()
 	u = {}
 	for word in unigramKeys:
-		u[word] = getProbOfWord(word)
+		u[word] = math.exp(getProbOfWord(word)) * 100
 
-	unigramWords = heapq.nlargest(10, u, key=u.get)
+	unigramWords = heapq.nlargest(15, u, key=u.get)
 	unigramValues = []
 	for word in unigramWords:
-		unigramValues.append(math.exp(u[word]) * 100)
+		unigramValues.append(u[word])
 
 	#bigrams
 	b = {}
 	for word1 in unigramKeys:
 		for word2 in probs[word1][1].keys():
-			b[word1 + " " + word2] = getProbOfWord(word1) + getProbOfWord(word1, word2)
+			b[word1 + " " + word2] = math.exp(getProbOfWord(word1) + getProbOfWord(word1, word2)) * 100
 
-	bigramWords = heapq.nlargest(10, b, key=b.get)
+	bigramWords = heapq.nlargest(15, b, key=b.get)
 	bigramValues = []
 	for word in bigramWords:
-		bigramValues.append(math.exp(b[word]) * 100)
+		bigramValues.append(b[word])
 
 	fig, (uniplot, biplot) = plt.subplots(nrows=2)
 
@@ -209,14 +240,10 @@ if(graph):
 	uniplot.set_xticks(range(len(unigramWords)))
 	uniplot.set_xticklabels(unigramWords)
 
-
-	# biplot.bar(range(len(unigramValues)), unigramValues)
-	# biplot.set_xlabel("Word")
-	# biplot.set_ylabel("Probability")
 	plt.subplots_adjust(hspace = 10)
 	plt.tight_layout()
 
-	plt.suptitle("Top 30 Unigram and Bigram Probabilities")
+	plt.suptitle("Top 15 Unigram and Bigram Probabilities")
 	plt.show()
 
 

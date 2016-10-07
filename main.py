@@ -150,6 +150,12 @@ def getHighestProbUnigram():
 	return random.choice(maxList)
 
 
+def getProbOfWord(word1, word2=None):
+	if(word2 == None):
+		return probs[word1][0]
+	else:
+		return probs[word1][1].get(word2, None)
+
 if(generateSentence):
 
 	print("Generating sentence using corpus folder(s) of " + str(corpusFolders))
@@ -171,27 +177,45 @@ if(generateSentence):
 if(graph):
 	#for unigrams
 	unigramKeys = probs.keys()
-	unigramValues = [probs[x][0] for x in unigramKeys]
-	#print(values)
-	u = dict(zip(unigramKeys, unigramValues))
-	words = heapq.nlargest(30, u, key=u.get)
-	unigramValues = []
-	for word in words:
-		unigramValues.append(probs[word][0])
+	u = {}
+	for word in unigramKeys:
+		u[word] = getProbOfWord(word)
 
+	unigramWords = heapq.nlargest(10, u, key=u.get)
+	unigramValues = []
+	for word in unigramWords:
+		unigramValues.append(math.exp(u[word]) * 100)
+
+	#bigrams
+	b = {}
+	for word1 in unigramKeys:
+		for word2 in probs[word1][1].keys():
+			b[word1 + " " + word2] = getProbOfWord(word1) + getProbOfWord(word1, word2)
+
+	bigramWords = heapq.nlargest(10, b, key=b.get)
+	bigramValues = []
+	for word in bigramWords:
+		bigramValues.append(math.exp(b[word]) * 100)
 
 	fig, (uniplot, biplot) = plt.subplots(nrows=2)
 
+	biplot.bar(range(len(bigramValues)), bigramValues)
+	biplot.set_xlabel("Word")
+	biplot.set_ylabel("Probability %")
+	biplot.set_xticks(range(len(bigramWords)))
+	biplot.set_xticklabels(bigramWords)
+
 	uniplot.bar(range(len(unigramValues)), unigramValues)
 	uniplot.set_xlabel("Word")
-	uniplot.set_ylabel("Probability")
-	uniplot.set_xticks(range(len(words)))
-	uniplot.set_xticklabels(words)
+	uniplot.set_ylabel("Probability %")
+	uniplot.set_xticks(range(len(unigramWords)))
+	uniplot.set_xticklabels(unigramWords)
 
 
 	# biplot.bar(range(len(unigramValues)), unigramValues)
 	# biplot.set_xlabel("Word")
 	# biplot.set_ylabel("Probability")
+	plt.subplots_adjust(hspace = 10)
 	plt.tight_layout()
 
 	plt.suptitle("Top 30 Unigram and Bigram Probabilities")

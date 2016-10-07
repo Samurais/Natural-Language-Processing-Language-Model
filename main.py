@@ -18,6 +18,7 @@ parser.add_argument('-a', help='Option to use add one smoothing', action='store_
 parser.add_argument('-d', help='For debugging', action='store_true', required=False, default=False)
 parser.add_argument('-i', help='Option to use custom start word', required=False, default=None)
 parser.add_argument('-p', help='Show Graph Plot of Probs', action='store_true', required=False, default=False)
+parser.add_argument('-pw', help='Show Graph Plot of Probs with word highlighted', required=False, default=None)
 
 
 
@@ -29,6 +30,7 @@ addOneSmoothing = args.a
 debugging = args.d
 customStartWord = args.i
 graph = args.p
+highlightWord = args.pw
 
 corpuses = []
 
@@ -168,23 +170,33 @@ if(generateSentence):
 
 if(graph):
 	#for unigrams
-	keys = probs.keys()
-	values = [probs[x][0] for x in keys]
+	unigramKeys = probs.keys()
+	unigramValues = [probs[x][0] for x in unigramKeys]
 	#print(values)
-	u10 = dict(zip(keys, values))
-	#print(u10)
-	words = heapq.nlargest(20, u10, key=u10.get)
-	values = []
+	u = dict(zip(unigramKeys, unigramValues))
+	words = heapq.nlargest(30, u, key=u.get)
+	unigramValues = []
 	for word in words:
-		values.append(math.exp(probs[word][0]) * 100)
-	print(values[0])
+		unigramValues.append(probs[word][0])
 
-	plt.title("Unigrams Probability")
-	plt.xlabel('Word')
-	plt.ylabel('Prob %')
-	plt.bar(range(len(values)), values)
-	plt.xticks(range(len(words)), words)
+
+	fig, (uniplot, biplot) = plt.subplots(nrows=2)
+
+	uniplot.bar(range(len(unigramValues)), unigramValues)
+	uniplot.set_xlabel("Word")
+	uniplot.set_ylabel("Probability")
+	uniplot.set_xticks(range(len(words)))
+	uniplot.set_xticklabels(words)
+
+
+	# biplot.bar(range(len(unigramValues)), unigramValues)
+	# biplot.set_xlabel("Word")
+	# biplot.set_ylabel("Probability")
+	plt.tight_layout()
+
+	plt.suptitle("Top 30 Unigram and Bigram Probabilities")
 	plt.show()
+
 
 if(debugging and customStartWord):
 	print(probs[customStartWord])

@@ -18,8 +18,6 @@ parser.add_argument('-a', help='Option to use add one smoothing', action='store_
 parser.add_argument('-d', help='For debugging', action='store_true', required=False, default=False)
 parser.add_argument('-i', help='Option to use custom start word', required=False, default=None)
 parser.add_argument('-p', help='Show Graph Plot of Probs', action='store_true', required=False, default=False)
-parser.add_argument('-pw', help='Show Graph Plot of Probs with word highlighted', required=False, default=None)
-
 
 
 args = parser.parse_args()
@@ -30,7 +28,6 @@ addOneSmoothing = args.a
 debugging = args.d
 customStartWord = args.i
 graph = args.p
-highlightWord = args.pw
 
 corpuses = []
 
@@ -175,6 +172,7 @@ if(generateSentence):
 	print()
 
 if(graph):
+	print("Generating graphs using corpus folder(s) of " + str(corpusFolders))
 	#for unigrams
 	unigramKeys = probs.keys()
 	u = {}

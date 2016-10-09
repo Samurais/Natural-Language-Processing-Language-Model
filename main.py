@@ -9,7 +9,6 @@ import heapq
 
 plt.style.use('ggplot')
 
-
 #get command line arguments
 parser = argparse.ArgumentParser(description='LM')
 parser.add_argument('-c', help='Corpus Folder', required=True, nargs='+')
@@ -67,6 +66,8 @@ for word1, word2 in zip(allWordsList, allWordsList[1:]): #go through pairs
 		counts[word1][1][word2] = 0
 	counts[word1][1][word2] += 1
 
+#print(counts)
+
 allWords = set(allWordsList)
 
 if(customStartWord != None and customStartWord not in allWords):
@@ -94,41 +95,17 @@ for word in counts:
 	if(probs.get(word) == None):
 		probs[word] = [0, {}]
 
-	if(addOneSmoothing):
-		probs[word][0] = math.log((counts[word][0] + 1) / (N + V))
-		for word2 in counts[word][1]:
-			probs[word][1][word2] = math.log((counts[word][1][word2] + 1) / (counts[word][0] + V))
-
+	if(counts[word][0] == 0):
+		probs[word][0] = -9999 #basically 0 prob because you cant do log(0)
 	else:
-		if(counts[word][0] == 0):
-			probs[word][0] = -9999 #basically 0 prob because you cant do log(0)
+		probs[word][0] = math.log(counts[word][0] / N)
+	for word2 in counts[word][1]:
+		if(counts[word][1][word2] == 0):
+			probs[word][1][word2] = -9999 #basically 0 prob because you cant do log(0)
 		else:
-			probs[word][0] = math.log(counts[word][0] / N)
-		for word2 in counts[word][1]:
-			if(counts[word][1][word2] == 0):
-				probs[word][1][word2] = -9999 #basically 0 prob because you cant do log(0)
-			else:
-				probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
+			probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
 
-# #really inefficient algorithim to find highest prob given previous word
-# def getHighestProbWordFromPrevWord(prevWord):
-# 	wordlist = probs[prevWord][1]
-
-# 	if(len(wordlist) == 0):
-# 		return None
-
-# 	maxList = []
-# 	max = -9999
-# 	for word in wordlist:
-# 		if(wordlist[word] > max):
-# 			max = wordlist[word]
-
-# 	#gets the ties for max and adds them to list
-# 	for word in wordlist:
-# 		if(wordlist[word] == max):
-# 			maxList.append(word)
-# 	#return random one
-# 	return random.choice(maxList)
+print(probs)
 
 def weightedPick(d):
 	values = [x * -1 for x in d.values()]
@@ -154,21 +131,6 @@ def getWeightedBigram(prevWord):
 	if(len(d) == 0): return None
 	return weightedPick(d)
 
-# #really inefficient to find highest prob
-# def getHighestProbUnigram():
-# 	#returns the unigram with the highest probability
-# 	maxList = []
-# 	max = -9999
-# 	for word in probs:
-# 		if(probs[word][0] > max):
-# 			max = probs[word][0]
-
-# 	for word in probs:
-# 		if(probs[word][0] == max):
-# 			maxList.append(word)
-
-# 	return random.choice(maxList)
-
 def getProbOfWord(word1, word2=None):
 	if(word2 == None):
 		return probs[word1][0]
@@ -179,6 +141,7 @@ if(generateSentence):
 
 	output = []
 	print("Generating sentence using corpus folder(s) of " + str(corpusFolders))
+	print()
 	if(customStartWord == None):
 		startWord = getWeightedUnigram()
 	else:
@@ -192,15 +155,12 @@ if(generateSentence):
 		if(next != None):
 			print(next,end=" ")
 			#print(next)
-			count.append(next)
 			startWord = next
 		else:
 			startWord = getWeightedUnigram()
-			count.append(startWord)
 			print(startWord,end=" ")
 
 	print()
-	print(count.count("a")/100)
 
 if(graph):
 	print("Generating graphs using corpus folder(s) of " + str(corpusFolders))
@@ -249,3 +209,5 @@ if(graph):
 
 if(debugging and customStartWord):
 	print(probs[customStartWord])
+
+print()

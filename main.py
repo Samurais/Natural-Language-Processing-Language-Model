@@ -118,9 +118,10 @@ for word in distinctWords:
 	for word2 in distinctWords:
 		if(probs[word][1].get(word2) == None):
 			if(addOneSmoothing):
-				probs[word][1][word2] = math.log(1 / V)
+				probs[word][1][word2] = math.log(1 / (counts[word][0] + V))
 			else:
 				probs[word][1][word2] = -99
+
 
 def weightedPick(d):
 	r = random.uniform(0, sum(d.values()))

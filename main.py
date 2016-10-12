@@ -44,21 +44,30 @@ for corpus in corpuses: # for reach text file in corpus
 		words = line.strip().split() #all words on line
 		allWordsList.extend(words)
 
-counts = Counter(allWordsList)
+train = allWordsList[: int(len(allWordsList) * .85)]
+test = allWordsList[int(len(allWordsList) * .15):]
+counts = Counter(train)
 N = sum(counts.values()) #total num of words
 
 #makes room for bigram
-for key in counts:
-	value = counts[key]
-	counts[key] = [value, {}]
+for word in counts:
+	count = counts[word]
+	counts[word] = [count, {}]
 
 #for bigram count
-for word1, word2 in zip(allWordsList, allWordsList[1:]): #go through pairs
+for word1, word2 in zip(train, train[1:]): #go through pairs
 	
 	if(counts[word1][1].get(word2) == None):
 		counts[word1][1][word2] = 0
 	counts[word1][1][word2] += 1
 
+#set test word counts to 0
+for word in test:
+	if(counts.get(word) == None):
+		counts[word] = [0, {}]
+	for word2 in test:
+		if(counts[word][1].get(word2) == None):
+			counts[word][1][word2] = 0
 #close files
 for corpus in corpuses:
 	corpus.close()
@@ -71,12 +80,24 @@ for word in counts:
 
 	#makes empty unigram prob and empty dict for bigram probs
 	if(probs.get(word) == None):
-		probs[word] = [0, {}]
+		probs[word] = [-9999, {}]
 
-	probs[word][0] = math.log(counts[word][0] / N)
+	if(addOneSmoothing):
+		probs[word][0] = math.log((counts[word][0] + 1) / (N + V))
+		for word2 in counts[word][1]:
+			probs[word][1][word2] = math.log((counts[word][1][word2] + 1) / (counts[word][0] + V))
+	else:
+		if(counts[word][0] == 0):
+			probs[word][0] = -999
+		else:
+			probs[word][0] = math.log(counts[word][0] / N)
+			for word2 in counts[word][1]:
+				if(counts[word][1][word2] == 0):
+					probs[word][1][word2] = -999
+				else:
+					probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
 
-	for word2 in counts[word][1]:
-		probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
+print(probs)
 
 def weightedPick(d):
 	r = random.uniform(0, sum(d.values()))

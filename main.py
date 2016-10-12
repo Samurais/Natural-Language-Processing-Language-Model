@@ -173,15 +173,21 @@ if(perplexity):
 
 	if(ngram == 1):
 		for word in test:
-			pp = pp + getProbOfWord(word)
-			#print(pp)
+			prob = getProbOfWord(word)
+			pp = pp + prob
 	else:
-		startWord = test[0]
 		if(len(test) > 1):
-			for word in test[1:100]:
-				pp = pp + getProbOfWord(startWord, word)
+			startWord = test[0]
+			for word in test[1:]:
+				probBi = getProbOfWord(startWord, word)
+				probUni = getProbOfWord(word)
+
+				if(probBi > probUni):
+					pp = pp + probBi
+				else:
+					pp = pp + probUni
+
 				startWord = word
-				#print(pp)
 		else:
 			pp = getProbOfWord(test[0])
 

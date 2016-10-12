@@ -120,8 +120,6 @@ for word in distinctWords:
 			else:
 				probs[word][1][word2] = -99
 
-print(probs)
-
 def weightedPick(d):
 	r = random.uniform(0, sum(d.values()))
 	s = 0.0
@@ -139,21 +137,23 @@ def getWeightedUnigram():
 def getWeightedBigram(prevWord):
 	d = {}
 	for word in probs[prevWord][1]:
-		d[word] = probs[prevWord][1].get(word)
+		d[word] = math.exp(probs[prevWord][1].get(word))
 	if(len(d) == 0): return None
 	return weightedPick(d)
 	
 if(generateSentence):
 
+	sentenceLength = 20
+
 	if(ngram == 1):
-		for i in range(10):
+		for i in range(sentenceLength):
 			print(getWeightedUnigram(), end=" ")
 
 	elif(ngram == 2):
 		startWord = getWeightedUnigram()
 		print(startWord, end=" ")
 
-		for i in range(10):
+		for i in range(sentenceLength):
 			next = getWeightedBigram(startWord)
 			if(next == None):
 				next = getWeightedUnigram()

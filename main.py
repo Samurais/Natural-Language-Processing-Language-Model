@@ -195,14 +195,11 @@ if(perplexity):
 
 	testN = len(test)
 	pp = math.exp(pp)
-	print(pp)
+	if(pp == 0):
+		pp = 0.00000001
 	pp = pp ** -1
 	print("Perplexity = (" + str(pp) + ")" + "^" + str(testN))
-
-	print(test)
-	print(probs)
-
-
+	
 if(graph):
 	print("Generating graphs using corpus folder of " + str(corpusFolder))
 	#for unigrams

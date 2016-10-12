@@ -25,6 +25,10 @@ addOneSmoothing = args.a
 ngram = int(args.n)
 graph = args.p
 
+if(ngram > 2 or ngram < 1):
+	print("-n flag must be either 1 or 2")
+	sys.exit()
+
 corpuses = []
 for dirpath, dirnames, filenames in os.walk(corpusFolder):
 	for filename in [f for f in filenames if f.endswith(".txt")]:
@@ -44,11 +48,14 @@ for corpus in corpuses: # for reach text file in corpus
 		words = line.strip().split() #all words on line
 		allWordsList.extend(words)
 
+print("Using first 85 % of corpus to train and 15% of corpus to test")
 train = allWordsList[: int(len(allWordsList) * .85)]
 test = allWordsList[int(len(allWordsList) * .15):]
+distinctWords = set(allWordsList)
 counts = Counter(train)
-N = sum(counts.values()) #total num of words
+N = sum(counts.values()) #total num of words for training
 
+print("Calculating Counts...")
 #makes room for bigram
 for word in counts:
 	count = counts[word]
@@ -61,41 +68,57 @@ for word1, word2 in zip(train, train[1:]): #go through pairs
 		counts[word1][1][word2] = 0
 	counts[word1][1][word2] += 1
 
-#set test word counts to 0
-for word in test:
-	if(counts.get(word) == None):
-		counts[word] = [0, {}]
-	for word2 in test:
-		if(counts[word][1].get(word2) == None):
-			counts[word][1][word2] = 0
 #close files
 for corpus in corpuses:
 	corpus.close()
 
 #set probabilities
 probs = {}
-V = len(set(allWordsList))
+V = len(set(train))
 
-for word in counts:
+print("Calculating Probabilities...")
+
+if(addOneSmoothing): print("Using add 1 smoothing")
+else: print("Using MLE")
+
+#sets known word probs
+for word in train:
 
 	#makes empty unigram prob and empty dict for bigram probs
 	if(probs.get(word) == None):
-		probs[word] = [-9999, {}]
+		probs[word] = [-99, {}]
 
 	if(addOneSmoothing):
 		probs[word][0] = math.log((counts[word][0] + 1) / (N + V))
+
 		for word2 in counts[word][1]:
 			probs[word][1][word2] = math.log((counts[word][1][word2] + 1) / (counts[word][0] + V))
 	else:
-		if(counts[word][0] == 0):
-			probs[word][0] = -999
+		probs[word][0] = math.log(counts[word][0] / N)
+		for word2 in counts[word][1]:
+			probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
+
+
+for word in distinctWords:
+
+	if word in test and word not in train:
+		probs[word] = [-99, {}]
+
+		if(addOneSmoothing):
+			probs[word][0] = math.log(1 / (N + V))
+			for word2 in distinctWords:
+				probs[word][1][word2] = math.log(1 / V)
 		else:
-			probs[word][0] = math.log(counts[word][0] / N)
-			for word2 in counts[word][1]:
-				if(counts[word][1][word2] == 0):
-					probs[word][1][word2] = -999
-				else:
-					probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
+			probs[word][0] = -99
+			for word2 in distinctWords:
+				probs[word][1][word2] = -99
+
+	for word2 in distinctWords:
+		if(probs[word][1].get(word2) == None):
+			if(addOneSmoothing):
+				probs[word][1][word2] = math.log(1 / V)
+			else:
+				probs[word][1][word2] = -99
 
 print(probs)
 
@@ -132,6 +155,8 @@ if(generateSentence):
 
 		for i in range(10):
 			next = getWeightedBigram(startWord)
+			if(next == None):
+				next = getWeightedUnigram()
 			print(next, end=" ")
 			startWord = next
 
@@ -142,7 +167,7 @@ def getProbOfWord(word1, word2=None):
 		return probs[word1][1].get(word2, None)
 
 if(graph):
-	print("Generating graphs using corpus folder(s) of " + str(corpusFolders))
+	print("Generating graphs using corpus folder of " + str(corpusFolder))
 	#for unigrams
 	unigramKeys = probs.keys()
 	u = {}

@@ -50,9 +50,9 @@ for corpus in corpuses: # for reach text file in corpus
 		words = line.strip().split() #all words on line
 		allWordsList.extend(words)
 
-print("Using first 85 % of corpus to train and 15% of corpus to test")
-train = allWordsList[: int(len(allWordsList) * .85)]
-test = allWordsList[int(len(allWordsList) * .85):]
+print("Using first 80 % of corpus to train and 20% of corpus to test")
+train = allWordsList[: int(len(allWordsList) * .80)]
+test = allWordsList[int(len(allWordsList) * .80):]
 distinctWords = set(allWordsList)
 counts = Counter(train)
 N = sum(counts.values()) #total num of words for training
@@ -76,7 +76,7 @@ for corpus in corpuses:
 
 #set probabilities
 probs = {}
-V = len(set(train))
+V = len(distinctWords)
 
 print("Calculating Probabilities...")
 
@@ -84,8 +84,8 @@ if(addOneSmoothing): print("Using add 1 smoothing")
 else: print("Using MLE")
 
 #sets known word probs
-for word in train:
-
+for word in counts:
+	#print(word)
 	#makes empty unigram prob and empty dict for bigram probs
 	if(probs.get(word) == None):
 		probs[word] = [-99, {}]
@@ -100,28 +100,25 @@ for word in train:
 		for word2 in counts[word][1]:
 			probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
 
-
+#will set the words for test data to default probs
 for word in distinctWords:
-
-	if word in test and word not in train:
+	if(probs.get(word) == None):
 		probs[word] = [-99, {}]
-
 		if(addOneSmoothing):
 			probs[word][0] = math.log(1 / (N + V))
-			for word2 in distinctWords:
-				probs[word][1][word2] = math.log(1 / V)
 		else:
 			probs[word][0] = -99
-			for word2 in distinctWords:
-				probs[word][1][word2] = -99
 
 	for word2 in distinctWords:
 		if(probs[word][1].get(word2) == None):
 			if(addOneSmoothing):
-				probs[word][1][word2] = math.log(1 / (counts[word][0] + V))
+				if(counts.get(word) != None):
+					#print(word)
+					probs[word][1][word2] = math.log(1 / (counts[word][0] + V))
+				else:
+					probs[word][1][word2] = math.log(1 / V)
 			else:
 				probs[word][1][word2] = -99
-
 
 def weightedPick(d):
 	r = random.uniform(0, sum(d.values()))
@@ -147,7 +144,7 @@ def getWeightedBigram(prevWord):
 if(generateSentence):
 
 	sentenceLength = 20
-
+	print()
 	if(ngram == 1):
 		for i in range(sentenceLength):
 			print(getWeightedUnigram(), end=" ")
@@ -168,15 +165,8 @@ def getProbOfWord(word1, word2=None):
 	if(word2 == None):
 		return probs[word1][0]
 	else:
-		return probs[word1][1].get(word2, None)
+		return probs[word1][1][word2]
 
-def iroot(k, n):
-    u, s = n, n+1
-    while u < s:
-        s = u
-        t = (k-1) * s + n // pow(s, k-1)
-        u = t // k
-    return s
 
 if(perplexity):
 	pp = 0
@@ -188,18 +178,17 @@ if(perplexity):
 	else:
 		startWord = test[0]
 		if(len(test) > 1):
-			for word in test[1:]:
+			for word in test[1:100]:
 				pp = pp + getProbOfWord(startWord, word)
 				startWord = word
+				#print(pp)
 		else:
 			pp = getProbOfWord(test[0])
 
-	testN = len(test)
-	pp = math.exp(pp)
-	if(pp == 0):
-		pp = 0.00000001
-	pp = pp ** -1
-	print("Perplexity = (" + str(pp) + ")" + "^" + str(testN))
+	M = len(test)
+	print("Perplexity = (exp(" + str(pp) + "))" + "^(-1/" + str(M) + ")")
+
+
 	
 if(graph):
 	print("Generating graphs using corpus folder of " + str(corpusFolder))
@@ -244,5 +233,3 @@ if(graph):
 
 	plt.suptitle("Top 15 Unigram and Bigram Probabilities")
 	plt.show()
-
-print()

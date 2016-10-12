@@ -16,6 +16,7 @@ parser.add_argument('-g', help='Option to generate sentences', action='store_tru
 parser.add_argument('-a', help='Option to use add one smoothing', action='store_true', required=False, default=False)
 parser.add_argument('-p', help='Show Graph Plot of Probs', action='store_true', required=False, default=False)
 parser.add_argument('-n', help='N-Gram to use', required=True)
+parser.add_argument('-perp', help='Calculate Perplexity', action='store_true', required=False, default=False)
 
 args = parser.parse_args()
 
@@ -24,6 +25,7 @@ generateSentence = args.g
 addOneSmoothing = args.a
 ngram = int(args.n)
 graph = args.p
+perplexity = args.perp
 
 if(ngram > 2 or ngram < 1):
 	print("-n flag must be either 1 or 2")
@@ -50,7 +52,7 @@ for corpus in corpuses: # for reach text file in corpus
 
 print("Using first 85 % of corpus to train and 15% of corpus to test")
 train = allWordsList[: int(len(allWordsList) * .85)]
-test = allWordsList[int(len(allWordsList) * .15):]
+test = allWordsList[int(len(allWordsList) * .85):]
 distinctWords = set(allWordsList)
 counts = Counter(train)
 N = sum(counts.values()) #total num of words for training
@@ -159,12 +161,47 @@ if(generateSentence):
 				next = getWeightedUnigram()
 			print(next, end=" ")
 			startWord = next
+	print()
 
 def getProbOfWord(word1, word2=None):
 	if(word2 == None):
 		return probs[word1][0]
 	else:
 		return probs[word1][1].get(word2, None)
+
+def iroot(k, n):
+    u, s = n, n+1
+    while u < s:
+        s = u
+        t = (k-1) * s + n // pow(s, k-1)
+        u = t // k
+    return s
+
+if(perplexity):
+	pp = 0
+
+	if(ngram == 1):
+		for word in test:
+			pp = pp + getProbOfWord(word)
+			#print(pp)
+	else:
+		startWord = test[0]
+		if(len(test) > 1):
+			for word in test[1:]:
+				pp = pp + getProbOfWord(startWord, word)
+				startWord = word
+		else:
+			pp = getProbOfWord(test[0])
+
+	testN = len(test)
+	pp = math.exp(pp)
+	print(pp)
+	pp = pp ** -1
+	print("Perplexity = (" + str(pp) + ")" + "^" + str(testN))
+
+	print(test)
+	print(probs)
+
 
 if(graph):
 	print("Generating graphs using corpus folder of " + str(corpusFolder))

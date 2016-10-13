@@ -20,6 +20,7 @@ parser.add_argument('-perp', help='Calculate Perplexity', action='store_true', r
 
 args = parser.parse_args()
 
+#sets command lines arguments = to respective variable
 corpusFolder = args.c
 generateSentence = args.g
 addOneSmoothing = args.a
@@ -27,10 +28,12 @@ ngram = int(args.n)
 graph = args.p
 perplexity = args.perp
 
+#user must choose bigram or unigram
 if(ngram > 2 or ngram < 1):
 	print("-n flag must be either 1 or 2")
 	sys.exit()
 
+#gets all the text files from the folder
 corpuses = []
 for dirpath, dirnames, filenames in os.walk(corpusFolder):
 	for filename in [f for f in filenames if f.endswith(".txt")]:
@@ -45,17 +48,21 @@ if(len(corpuses) == 0):
 allWordsList = []
 
 print("reading corpus...")
+
+#appends every word to a list
 for corpus in corpuses: # for reach text file in corpus
 	for line in corpus: # for each line
 		words = line.strip().split() #all words on line
 		allWordsList.extend(words)
 
 print("Using first 80 % of corpus to train and 20% of corpus to test")
+#splits corpus into 80% training and 20% testing
 train = allWordsList[: int(len(allWordsList) * .80)]
 test = allWordsList[int(len(allWordsList) * .80):]
-distinctWords = set(allWordsList)
-counts = Counter(train)
-N = sum(counts.values()) #total num of words for training
+distinctWords = set(allWordsList) #distinct words
+counts = Counter(train) #gets the counts of the words used for training
+N = len(train) #total num of words for train and test words
+V = len(set(train)) #total number of train and Test words
 
 print("Calculating Counts...")
 #makes room for bigram
@@ -76,7 +83,6 @@ for corpus in corpuses:
 
 #set probabilities
 probs = {}
-V = len(distinctWords)
 
 print("Calculating Probabilities...")
 
@@ -100,26 +106,7 @@ for word in counts:
 		for word2 in counts[word][1]:
 			probs[word][1][word2] = math.log(counts[word][1][word2] / counts[word][0])
 
-#will set the words for test data to default probs
-for word in distinctWords:
-	if(probs.get(word) == None):
-		probs[word] = [-99, {}]
-		if(addOneSmoothing):
-			probs[word][0] = math.log(1 / (N + V))
-		else:
-			probs[word][0] = -99
-
-	for word2 in distinctWords:
-		if(probs[word][1].get(word2) == None):
-			if(addOneSmoothing):
-				if(counts.get(word) != None):
-					#print(word)
-					probs[word][1][word2] = math.log(1 / (counts[word][0] + V))
-				else:
-					probs[word][1][word2] = math.log(1 / V)
-			else:
-				probs[word][1][word2] = -99
-
+#performs weighted pick of dictionary key based on value
 def weightedPick(d):
 	r = random.uniform(0, sum(d.values()))
 	s = 0.0
@@ -128,46 +115,69 @@ def weightedPick(d):
 		if r < s: return k
 	return k
 
+#chooses a unigram by weight
 def getWeightedUnigram():
 	d = {}
 	for word in probs:
 		d[word] = math.exp(probs[word][0])
 	return weightedPick(d)
 
+#chooses a bigram from a given word by weight
 def getWeightedBigram(prevWord):
 	d = {}
 	for word in probs[prevWord][1]:
 		d[word] = math.exp(probs[prevWord][1].get(word))
 	if(len(d) == 0): return None
 	return weightedPick(d)
-	
+
+#generates sentence
 if(generateSentence):
 
-	sentenceLength = 20
-	print()
-	if(ngram == 1):
-		for i in range(sentenceLength):
-			print(getWeightedUnigram(), end=" ")
+	for i in range(5):
+		sentenceLength = 10
+		print()
 
-	elif(ngram == 2):
-		startWord = getWeightedUnigram()
-		print(startWord, end=" ")
 
-		for i in range(sentenceLength):
-			next = getWeightedBigram(startWord)
-			if(next == None):
-				next = getWeightedUnigram()
-			print(next, end=" ")
-			startWord = next
-	print()
+		if(ngram == 1): #if doing unigram model
+			for i in range(sentenceLength):
+				print(getWeightedUnigram(), end=" ")
 
+		elif(ngram == 2): #if doing bigram model
+			startWord = getWeightedUnigram()
+			print(startWord, end=" ")
+
+			for i in range(sentenceLength):
+				next = getWeightedBigram(startWord)
+				if(next == None):
+					next = getWeightedUnigram()
+				print(next, end=" ")
+				startWord = next
+		print()
+
+#gets probability of a word
 def getProbOfWord(word1, word2=None):
 	if(word2 == None):
-		return probs[word1][0]
+		if(probs.get(word1) == None):
+			if(addOneSmoothing):
+				return math.log(1 / (N + V))
+			else:
+				return -99
+		else:
+			return probs[word1][0]
 	else:
+		if(probs.get(word1) == None):
+			if(addOneSmoothing):
+				return math.log(1 / V)
+			else:
+				return -99
+		if(probs[word1][1].get(word2) == None):
+			if(addOneSmoothing):
+				return math.log(1 / (counts[word1][0] + V))
+			else:
+				return -99
 		return probs[word1][1][word2]
 
-
+#calculates perplexity
 if(perplexity):
 	pp = 0
 
@@ -176,12 +186,13 @@ if(perplexity):
 			prob = getProbOfWord(word)
 			pp = pp + prob
 	else:
-		if(len(test) > 1):
+		if(len(test) > 1): #if theres more than one word in the test words
 			startWord = test[0]
 			for word in test[1:]:
 				probBi = getProbOfWord(startWord, word)
 				probUni = getProbOfWord(word)
 
+				#uses the bigram prob if it is good, otherwise just use unigram
 				if(probBi > probUni):
 					pp = pp + probBi
 				else:
@@ -194,16 +205,18 @@ if(perplexity):
 	M = len(test)
 	print("Perplexity = (exp(" + str(pp) + "))" + "^(-1/" + str(M) + ")")
 
-
-	
+#generates graphs
 if(graph):
 	print("Generating graphs using corpus folder of " + str(corpusFolder))
-	#for unigrams
+
+
+ 	#unigrams
 	unigramKeys = probs.keys()
 	u = {}
-	for word in unigramKeys:
+	for word in unigramKeys: #converts to percentage
 		u[word] = math.exp(getProbOfWord(word)) * 100
 
+	#gets top 15 unigrams by prob
 	unigramWords = heapq.nlargest(15, u, key=u.get)
 	unigramValues = []
 	for word in unigramWords:
@@ -220,6 +233,8 @@ if(graph):
 	for word in bigramWords:
 		bigramValues.append(b[word])
 
+
+	#plots everything
 	fig, (uniplot, biplot) = plt.subplots(nrows=2)
 
 	biplot.bar(range(len(bigramValues)), bigramValues)

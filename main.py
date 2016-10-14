@@ -55,9 +55,9 @@ for corpus in corpuses: # for reach text file in corpus
 		words = line.strip().split() #all words on line
 		allWordsList.extend(words)
 
-print("Using first 90 % of corpus to train and last 10% of corpus to test")
+print("Using first 80 % of corpus to train and last 20% of corpus to test")
 #splits corpus into 80% training and 20% testing
-split = int(len(allWordsList) * .90)
+split = int(len(allWordsList) * .80)
 train = allWordsList[: split]
 test = allWordsList[split:]
 counts = Counter(train) #gets the counts of the words used for training
@@ -104,9 +104,9 @@ def getProbOfWord(word1, word2=None):
 			return math.log(counts[word1][0] / N)
 	else: #bigram
 
-		if(counts.get(word) == None):
+		if(counts.get(word1) == None):
 			if(addOneSmoothing):
-				return math.log(1 / N + V)
+				return math.log(1 / V)
 			else:
 				return -99
 

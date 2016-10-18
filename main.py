@@ -137,7 +137,7 @@ def getWeightedUnigram():
 def getWeightedBigram(prevWord):
 	d = {}
 	for word in set(allWordsList):
-		d[word] = math.exp(getProbOfWord(prevWord, word))
+		d[word] = math.exp(getProbOfBigram(prevWord, word))
 	return weightedPick(d)
 
 #generates sentence
@@ -201,7 +201,7 @@ if(graph):
 	unigramKeys = counts.keys()
 	u = {}
 	for word in unigramKeys: #converts to percentage
-		u[word] = math.exp(getProbOfWord(word)) * 100
+		u[word] = math.exp(getProbOfUnigram(word)) * 100
 
 	#gets top 15 unigrams by prob
 	unigramWords = heapq.nlargest(15, u, key=u.get)
@@ -213,7 +213,7 @@ if(graph):
 	b = {}
 	for word1 in unigramKeys:
 		for word2 in counts[word1][1].keys():
-			b[word1 + " " + word2] = math.exp(getProbOfWord(word1) + getProbOfWord(word1, word2)) * 100
+			b[word1 + " " + word2] = math.exp(getProbOfUnigram(word1) + getProbOfBigram(word1, word2)) * 100
 
 	bigramWords = heapq.nlargest(15, b, key=b.get)
 	bigramValues = []

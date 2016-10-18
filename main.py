@@ -20,7 +20,7 @@ parser.add_argument('-perp', help='Calculate Perplexity', action='store_true', r
 
 args = parser.parse_args()
 
-#sets command lines arguments = to respective variable
+#sets command lines arguments equal to respective variable
 corpusFolder = args.c
 generateSentence = args.g
 addOneSmoothing = args.a
@@ -37,7 +37,7 @@ if(ngram > 2 or ngram < 1):
 corpuses = []
 for dirpath, dirnames, filenames in os.walk(corpusFolder):
 	for filename in [f for f in filenames if f.endswith(".txt")]:
-		corpus = open(os.path.join(dirpath, filename), "r", encoding='utf-8', errors='ignore')
+		corpus = open(os.path.join(dirpath, filename), "r")
 		corpuses.append(corpus)
 
 if(len(corpuses) == 0):
@@ -62,7 +62,7 @@ train = allWordsList[: split]
 test = allWordsList[split:]
 counts = Counter(train) #gets the counts of the words used for training
 N = len(train) #total num of words for train 
-V = len(set(train)) # num of unique train words
+V = len(set(allWordsList)) # num of unique words
 
 print("Calculating Counts...")
 #makes room for bigram
@@ -86,44 +86,36 @@ print("Calculating Probabilities...")
 if(addOneSmoothing): print("Using add 1 smoothing...")
 else: print("Using MLE...")
 
-#gets probability of a word
-def getProbOfWord(word1, word2=None):
+def getProbOfBigram(word1, word2):
 
-	if(word2 == None): #unigram
-		#words that dont exist
-		if(counts.get(word1) == None):
-			if(addOneSmoothing):
-				return math.log(1 / (N + V))
-			else:
-				return -99
-
-		#words that exist		
+	if word1 not in counts:
 		if(addOneSmoothing):
-			return math.log((counts[word1][0] + 1) / (N + V))
+			return math.log(1 / V)
+		else:
+			return -99
+
+	if(word2 not in counts[word1][1]):
+		if(addOneSmoothing):
+			return math.log(1 / (counts[word1][0] + V))
+		else:
+			return -99
+
+	if(addOneSmoothing):
+		return math.log(counts[word1][1][word2] / (counts[word1][0] + V))
+	else:
+		return math.log(counts[word1][1][word2] / counts[word1][0])
+
+def getProbOfUnigram(word1):
+	if word1 in counts:
+		if(addOneSmoothing):
+			return math.log(counts[word1][0] / (N + V))
 		else:
 			return math.log(counts[word1][0] / N)
-	else: #bigram
-
-		if(counts.get(word1) == None):
-			if(addOneSmoothing):
-				return math.log(1 / V)
-			else:
-				return -99
-
-		if(counts[word1][1].get(word2) == None):
-			if(addOneSmoothing):
-				if(counts.get(word1) == None):
-					return math.log(1 / V)
-				else:
-					return math.log(1 / (counts[word1][0] + V))
-			else:
-				return -99
-
-		#words that exist
+	else:
 		if(addOneSmoothing):
-			return math.log((counts[word1][1][word2] + 1) / (counts[word1][0] + V))
+			return math.log(1 / (N + V))
 		else:
-			return math.log(counts[word1][1][word2] / counts[word1][0])
+			return -99
 
 #performs weighted pick of dictionary key based on value
 def weightedPick(d):
@@ -137,14 +129,14 @@ def weightedPick(d):
 #chooses a unigram by weight
 def getWeightedUnigram():
 	d = {}
-	for word in counts:
-		d[word] = math.exp(getProbOfWord(word))
+	for word in set(allWordsList):
+		d[word] = math.exp(getProbOfUnigram(word))
 	return weightedPick(d)
 
 #chooses a bigram from a given word by weight
 def getWeightedBigram(prevWord):
 	d = {}
-	for word in counts[prevWord][1]:
+	for word in set(allWordsList):
 		d[word] = math.exp(getProbOfWord(prevWord, word))
 	return weightedPick(d)
 
@@ -154,7 +146,6 @@ if(generateSentence):
 	for i in range(5):
 		sentenceLength = 20
 		print()
-
 
 		if(ngram == 1): #if doing unigram model
 			for i in range(sentenceLength):
@@ -180,14 +171,14 @@ if(perplexity):
 
 	if(ngram == 1):
 		for word in test:
-			prob = getProbOfWord(word)
+			prob = getProbOfUnigram(word)
 			pp = pp + prob
 	else:
 		if(len(test) > 1): #if theres more than one word in the test words
 			startWord = test[0]
 			for word in test[1:]:
-				probBi = getProbOfWord(startWord, word)
-				probUni = getProbOfWord(word)
+				probBi = getProbOfBigram(startWord, word)
+				probUni = getProbOfUnigram(word)
 
 				#uses the bigram prob if it is good, otherwise just use unigram
 				if(probBi > probUni):
@@ -197,7 +188,7 @@ if(perplexity):
 
 				startWord = word
 		else:
-			pp = getProbOfWord(test[0])
+			pp = getProbOfUnigram(test[0])
 
 	M = len(test)
 	print("Perplexity = (exp(" + str(pp) + "))" + "^(-1/" + str(M) + ")")

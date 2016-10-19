@@ -101,14 +101,14 @@ def getProbOfBigram(word1, word2):
 			return -99
 
 	if(addOneSmoothing):
-		return math.log(counts[word1][1][word2] / (counts[word1][0] + V))
+		return math.log((counts[word1][1][word2] + 1) / (counts[word1][0] + V))
 	else:
 		return math.log(counts[word1][1][word2] / counts[word1][0])
 
 def getProbOfUnigram(word1):
 	if word1 in counts:
 		if(addOneSmoothing):
-			return math.log(counts[word1][0] / (N + V))
+			return math.log((counts[word1][0] + 1) / (N + V))
 		else:
 			return math.log(counts[word1][0] / N)
 	else:

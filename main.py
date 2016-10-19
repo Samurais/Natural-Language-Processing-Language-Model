@@ -130,14 +130,20 @@ def weightedPick(d):
 def getWeightedUnigram():
 	d = {}
 	for word in set(allWordsList):
-		d[word] = math.exp(getProbOfUnigram(word))
+		if(getProbOfUnigram(word) == -99):
+			d[word] = 0
+		else:
+			d[word] = math.exp(getProbOfUnigram(word))
 	return weightedPick(d)
 
 #chooses a bigram from a given word by weight
 def getWeightedBigram(prevWord):
 	d = {}
 	for word in set(allWordsList):
-		d[word] = math.exp(getProbOfBigram(prevWord, word))
+		if(getProbOfBigram(prevWord, word) == -99):
+			d[word] = 0
+		else:
+			d[word] = math.exp(getProbOfBigram(prevWord, word))
 	return weightedPick(d)
 
 #generates sentence

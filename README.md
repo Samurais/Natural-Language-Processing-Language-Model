@@ -11,7 +11,7 @@ OPTIONAL FLAGS
 -perp Calculates Perplexity
 
 -p Plots the probabilities of the unigrams and bigrams in a pretty bar chart. 
-(This will only work if matplotlib is installed as a python module. You can uncomment code that has "UNCOMMENT IF MATPLOTLIB IS INSTALLED TO GET GRAPHS WORKING" if matplotlib is installed) Otherwise, leave the lines commented.
+(This will only work if matplotlib is installed as a python module.) If matplotlib is installed uncomment the lines with "Uncomment for graphs" to use graphs.
 
 
 Example execution

@@ -4,10 +4,10 @@ import os
 import random
 import sys
 from collections import Counter
-#import matplotlib.pyplot as plt UNCOMMENT IF MATPLOTLIB IS INSTALLED TO GET GRAPHS WORKING
+#import matplotlib.pyplot as plt Uncomment for graphs
 import heapq
 
-#plt.style.use('ggplot') UNCOMMENT IF MATPLOTLIB IS INSTALLED  TO GET GRAPHS WORKING
+#plt.style.use('ggplot') Uncomment for graphs
 
 #get command line arguments
 parser = argparse.ArgumentParser(description='LM')
@@ -202,7 +202,7 @@ if(perplexity):
 	M = len(test)
 	print("Perplexity = (exp(" + str(pp) + "))" + "^(-1/" + str(M) + ")")
 
-#generates graphs UNCOMMENT IF MATPLOTLIB IS INSTALLED TO GET GRAPHS WORKING
+#generates graphs Uncomment for graphs
 # if(graph):
 # 	print("Generating graphs using corpus folder of " + str(corpusFolder))
 

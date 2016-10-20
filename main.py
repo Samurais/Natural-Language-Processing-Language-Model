@@ -4,10 +4,10 @@ import os
 import random
 import sys
 from collections import Counter
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt UNCOMMENT IF MATPLOTLIB IS INSTALLED TO GET GRAPHS WORKING
 import heapq
 
-plt.style.use('ggplot')
+#plt.style.use('ggplot') UNCOMMENT IF MATPLOTLIB IS INSTALLED  TO GET GRAPHS WORKING
 
 #get command line arguments
 parser = argparse.ArgumentParser(description='LM')
@@ -88,13 +88,13 @@ else: print("Using MLE...")
 
 def getProbOfBigram(word1, word2):
 
-	if word1 not in counts:
+	if word1 not in counts: #if the first word wasnt in training
 		if(addOneSmoothing):
 			return math.log(1 / V)
 		else:
 			return -99
 
-	if(word2 not in counts[word1][1]):
+	if(word2 not in counts[word1][1]): #if the second word never followed the first word
 		if(addOneSmoothing):
 			return math.log(1 / (counts[word1][0] + V))
 		else:
@@ -106,16 +106,19 @@ def getProbOfBigram(word1, word2):
 		return math.log(counts[word1][1][word2] / counts[word1][0])
 
 def getProbOfUnigram(word1):
-	if word1 in counts:
-		if(addOneSmoothing):
-			return math.log((counts[word1][0] + 1) / (N + V))
-		else:
-			return math.log(counts[word1][0] / N)
-	else:
+
+	if word1 not in counts: #if word never appeared in training
 		if(addOneSmoothing):
 			return math.log(1 / (N + V))
 		else:
 			return -99
+
+	#word appeared in training		
+	if(addOneSmoothing):
+		return math.log((counts[word1][0] + 1) / (N + V))
+	else:
+		return math.log(counts[word1][0] / N)
+		
 
 #performs weighted pick of dictionary key based on value
 def weightedPick(d):
@@ -150,7 +153,7 @@ def getWeightedBigram(prevWord):
 if(generateSentence):
 
 	for i in range(5):
-		sentenceLength = 20
+		sentenceLength = 10
 		print()
 
 		if(ngram == 1): #if doing unigram model
@@ -199,51 +202,51 @@ if(perplexity):
 	M = len(test)
 	print("Perplexity = (exp(" + str(pp) + "))" + "^(-1/" + str(M) + ")")
 
-#generates graphs
-if(graph):
-	print("Generating graphs using corpus folder of " + str(corpusFolder))
+#generates graphs UNCOMMENT IF MATPLOTLIB IS INSTALLED TO GET GRAPHS WORKING
+# if(graph):
+# 	print("Generating graphs using corpus folder of " + str(corpusFolder))
 
- 	#unigrams
-	unigramKeys = counts.keys()
-	u = {}
-	for word in unigramKeys: #converts to percentage
-		u[word] = math.exp(getProbOfUnigram(word)) * 100
+#  	#unigrams
+# 	unigramKeys = counts.keys()
+# 	u = {}
+# 	for word in unigramKeys: #converts to percentage
+# 		u[word] = math.exp(getProbOfUnigram(word)) * 100
 
-	#gets top 15 unigrams by prob
-	unigramWords = heapq.nlargest(15, u, key=u.get)
-	unigramValues = []
-	for word in unigramWords:
-		unigramValues.append(u[word])
+# 	#gets top 15 unigrams by prob
+# 	unigramWords = heapq.nlargest(15, u, key=u.get)
+# 	unigramValues = []
+# 	for word in unigramWords:
+# 		unigramValues.append(u[word])
 
-	#bigrams
-	b = {}
-	for word1 in unigramKeys:
-		for word2 in counts[word1][1].keys():
-			b[word1 + " " + word2] = math.exp(getProbOfUnigram(word1) + getProbOfBigram(word1, word2)) * 100
+# 	#bigrams
+# 	b = {}
+# 	for word1 in unigramKeys:
+# 		for word2 in counts[word1][1].keys():
+# 			b[word1 + " " + word2] = math.exp(getProbOfUnigram(word1) + getProbOfBigram(word1, word2)) * 100
 
-	bigramWords = heapq.nlargest(15, b, key=b.get)
-	bigramValues = []
-	for word in bigramWords:
-		bigramValues.append(b[word])
+# 	bigramWords = heapq.nlargest(15, b, key=b.get)
+# 	bigramValues = []
+# 	for word in bigramWords:
+# 		bigramValues.append(b[word])
 
 
-	#plots everything
-	fig, (uniplot, biplot) = plt.subplots(nrows=2)
+# 	#plots everything
+# 	fig, (uniplot, biplot) = plt.subplots(nrows=2)
 
-	biplot.bar(range(len(bigramValues)), bigramValues)
-	biplot.set_xlabel("Word")
-	biplot.set_ylabel("Probability %")
-	biplot.set_xticks(range(len(bigramWords)))
-	biplot.set_xticklabels(bigramWords)
+# 	biplot.bar(range(len(bigramValues)), bigramValues)
+# 	biplot.set_xlabel("Word")
+# 	biplot.set_ylabel("Probability %")
+# 	biplot.set_xticks(range(len(bigramWords)))
+# 	biplot.set_xticklabels(bigramWords)
 
-	uniplot.bar(range(len(unigramValues)), unigramValues)
-	uniplot.set_xlabel("Word")
-	uniplot.set_ylabel("Probability %")
-	uniplot.set_xticks(range(len(unigramWords)))
-	uniplot.set_xticklabels(unigramWords)
+# 	uniplot.bar(range(len(unigramValues)), unigramValues)
+# 	uniplot.set_xlabel("Word")
+# 	uniplot.set_ylabel("Probability %")
+# 	uniplot.set_xticks(range(len(unigramWords)))
+# 	uniplot.set_xticklabels(unigramWords)
 
-	plt.subplots_adjust(hspace = 10)
-	plt.tight_layout()
+# 	plt.subplots_adjust(hspace = 10)
+# 	plt.tight_layout()
 
-	plt.suptitle("Top 15 Unigram and Bigram Probabilities")
-	plt.show()
+# 	plt.suptitle("Top 15 Unigram and Bigram Probabilities")
+# 	plt.show()

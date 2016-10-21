@@ -200,7 +200,8 @@ if(perplexity):
 			pp = getProbOfUnigram(test[0])
 
 	M = len(test)
-	print("Perplexity = (exp(" + str(pp) + "))" + "^(-1/" + str(M) + ")")
+	pp = (-1/M) * pp 
+	print("Perplexity = " + str(pp))
 
 #generates graphs Uncomment for graphs
 # if(graph):

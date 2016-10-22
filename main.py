@@ -177,10 +177,13 @@ if(generateSentence):
 #calculates perplexity
 if(perplexity):
 	pp = 0
-
+	infinity = False
 	if(ngram == 1):
 		for word in test:
 			prob = getProbOfUnigram(word)
+			if(prob == -99):
+				infinity = True
+				break
 			pp = pp + prob
 	else:
 		if(len(test) > 1): #if theres more than one word in the test words
@@ -193,15 +196,21 @@ if(perplexity):
 				if(probBi > probUni):
 					pp = pp + probBi
 				else:
+					if(probBi == -99):
+						infinity = True
+						break
 					pp = pp + probUni
 
 				startWord = word
 		else:
 			pp = getProbOfUnigram(test[0])
 
-	M = len(test)
-	pp = (-1/M) * pp 
-	print("Perplexity = " + str(pp))
+	if(infinity):
+		print("Perplexity is infinite")
+	else:
+		M = len(test)
+		pp = (-1/M) * pp 
+		print("Perplexity = " + str(pp))
 
 #generates graphs Uncomment for graphs
 # if(graph):

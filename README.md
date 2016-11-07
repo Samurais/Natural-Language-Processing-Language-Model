@@ -1,3 +1,6 @@
+Will be taken down at departments or teachers request.
+-------------------------------------------------------
+
 CSC470-02
 Project 2
 Due: October 20, 2016 by 11:59PM

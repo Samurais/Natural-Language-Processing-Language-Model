@@ -1,13 +1,43 @@
 Garrett Beatty
 Language Model
+----------------
+
+HOW TO RUN
+-----------
+
+REQUIRED FLAGS
+-c is the flag for your corpus folder containing .txt files
+-n is the flag for which ngram size you want to use. This can either be 1 or 2 for unigram or bigram respectively.
+
+
+OPTIONAL FLAGS
+-g Generates sentences
+-a Uses add-1 smoothing instead of MLE
+-perp Calculates Perplexity
+
+-p Plots the probabilities of the unigrams and bigrams in a pretty bar chart. 
+(This will only work if matplotlib is installed as a python module.) If matplotlib is installed, uncomment the lines with "Uncomment for graphs" to use graphs.
+
+
+Example executions
+-----------------
+python3 main.py -c brown -n 1 -g -a -perp -p
+
+python3 main.py -c brown -n 2 -g
+
+python3 main.py -c communist_man -n 2 -g -a 
+
+python3 main.py -c trump -n 2 -g -a -perp
+
 
 Will be taken down at departments or teachers request.
---------------------------------------------------------------------------------------------------
+
 CSC470-02
 Project 2
 Due: October 20, 2016 by 11:59PM
 
-Title: N-Grams and Language Modeling 
+Title: N-Grams and Language Modeling
+------------------------------------
 
 Description: In this project you will implement some of the language modeling techniques we discussed in class. You will gain hands-on experience with he training, i.e., probability estimation, phase and the testing, i.e., the model evaluation phase. In addition, you will gain experience implementing parameter estimation smoothing algorithms and using a LM (language model) to automatically generate language. You will also gain experience in corpus selection and analyze corpus impact on learned models. All corpora for this assignment must be in English.
 
@@ -37,32 +67,3 @@ D2: Write-up with results and analysis from T5, T6, T7, and T8.
 
 
 Please submit as .tar.gz file.
---------------------------------------------------------------------------------------------------
-
-
-HOW TO RUN
-
-REQUIRED FLAGS
--c is the flag for your corpus folder containing .txt files
--n is the flag for which ngram size you want to use. This can either be 1 or 2 for unigram or bigram respectively.
-
-
-OPTIONAL FLAGS
--g Generates sentences
--a Uses add-1 smoothing instead of MLE
--perp Calculates Perplexity
-
--p Plots the probabilities of the unigrams and bigrams in a pretty bar chart. 
-(This will only work if matplotlib is installed as a python module.) If matplotlib is installed, uncomment the lines with "Uncomment for graphs" to use graphs.
-
-
-Example executions
-python3 main.py -c brown -n 1 -g -a -perp -p
-
-python3 main.py -c brown -n 2 -g
-
-python3 main.py -c communist_man -n 2 -g -a 
-
-python3 main.py -c trump -n 2 -g -a -perp
-
-
